@@ -1,0 +1,168 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;800&display=swap');
+* {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+    font-family: "Poppins";
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    color: white;
+    background-color: black;
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+nav {
+    background: white;
+    padding: 1.2rem 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+nav::-webkit-scrollbar {
+    display: none;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    /*flex-direction:row;*/
+    flex-wrap: nowrap;
+    gap: 1.5rem;
+    padding: 0 1rem;
+    justify-content: center;
+    width: max-content;
+}
+
+nav ul li {
+    flex: 0 0 auto;
+}
+
+nav ul li a {
+    color: black;
+    text-decoration: none;
+    font-size: 18px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+nav ul li a:hover,
+nav ul li a.active {
+    text-decoration: underline;
+    color: green;
+}
+
+nav a:hover p {
+    font-size: 100px;
+}
+
+/* When the screen is narrow enough to overflow, switch alignment */
+@media (min-width: 532px) {
+    nav {
+        overflow-x: visible
+    }
+
+    nav ul {
+        width: 100%;
+        justify-content: center; /* ✅ left-align for scrolling */
+    }
+}
+
+#content {
+    padding: 100px 20px 80px;
+    text-align: center;
+    flex: 1;
+}
+
+.textAlign {
+    text-align: justify;
+    padding: 1rem 1rem;
+}
+
+#playlistContainer {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 0;
+    margin-top: 1.5rem;
+}
+
+/* each video item */
+#playlistContainer li {
+    border-radius: 10px;
+    /*box-shadow: 0 2px 6px red;*/
+    width: 320px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* transition: transform 0.2s; */
+    border: 5px solid transparent
+}
+
+#playlistContainer img {
+    width: 100%;
+    display: block;
+}
+
+#playlistContainer li a p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 5px;
+}
+
+#playlistContainer a {
+    color: white;
+    text-decoration-line: none;
+    
+}
+
+#playlistContainer li a:hover {
+    /*text-decoration: underline;*/
+    color: rgb(132, 223, 132);
+}
+
+#playlistContainer li:hover {
+    box-shadow: 0px 2px 20px rgb(132, 223, 132);
+    border-color: rgb(132, 223, 132);
+    border-width: 5px;
+    border-style: solid;
+    box-sizing: border-box;
+}
+
+#video_player {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+
+footer {
+    padding: 1.2rem;
+    background: white;
+    color: black;
+    font-weight: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.page_subtitle {
+    color: rgb(103, 211, 151);
+    font-weight: 600;
+}
