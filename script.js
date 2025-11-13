@@ -2,10 +2,14 @@
 
 
 document.addEventListener("DOMContentLoaded", ()=> {
+    history.scrollRestoration = "manual";
+
     const contentDiv = document.getElementById("content");
-    const dynamicMenu = document.getElementById("dynamicMenus");
+    const dynamicMenu = document.getElementById("dynamicMenu");
 
     const scrollPositions = {};
+
+    let lastVideoId = null;
 
     previousPage = currentPage()
 
@@ -16,7 +20,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
         home: `
             <h1>Home</h1>
             <p class="page_subtitle">Figure Drawing Focus Mode!</p>
-            <p>No need to get flashbanged by YouTube's home page. Let's get going!</p>
+            <p style="padding: 1rem 1rem;">No need to get flashbanged by YouTube's home page. Let's get going!</p>
             
             `,
         about: `
@@ -37,7 +41,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
             `,
     };
 
-    generatePlaylist()
+    //generatePlaylist()
 
     async function generatePlaylist() {
         // ok, we need to create the playlist options here...
@@ -96,10 +100,11 @@ document.addEventListener("DOMContentLoaded", ()=> {
         `
 
         //onsole.log(pages.playlist)
+        console.log("Generated playlist")
     };
 
     // streamline this... Add a function called create nav links
-    // This function creates new 'a' links inside dynamicMenus using the const pages and assigns hash href references.
+    // This function creates new 'a' links inside dynamicMenu using the const pages and assigns hash href references.
     // the hightlighted (or "active") link should always be the one currently used.
     function createNavLinks() {
         // loop through all keys
@@ -168,18 +173,28 @@ document.addEventListener("DOMContentLoaded", ()=> {
             //    videoId = ids[randomIndex];
             //}
             
-            let videoFlair = fallbackVideos[videoId] || "";
+            let videoFlair = fallbackVideos[videoId] || "Select a video from the playlist or add '?v=[id]' to the end of the link to start watching. Using a youtu.be video id also works.";
+
+            const flairHTML = !videoId ? `<p style:"padding: 1rem 1rem;">${videoFlair}</p>` : "";
 
             if (!videoId) {
-                videoFlair = "Pick a video from the playlist!"
+                if (lastVideoId) {
+                    videoId = lastVideoId;
+                    location.hash = `video_player?v=${lastVideoId}`;
+                } else {
+                    videoFlair = "Pick a video from the playlist!";
+                    location.hash = `video_player`;
+                }
+            } else {
+                lastVideoId = videoId;
             }
 
             pages.video_player = `
                 <h1>Video Player</h1>
-                <div>
+                ${flairHTML}
+                <div class="video-wrapper">
                     <iframe id="video_player" src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
                 </div>
-                <p>${videoFlair}</p>
             `;
         
         }
@@ -188,6 +203,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
 
         // set the content this page if it exists, or the home page.
         contentDiv.innerHTML = pages[page] || pages.home;
+
         // call setActiveLink (???)
         setActiveLink(page);
 
@@ -197,12 +213,18 @@ document.addEventListener("DOMContentLoaded", ()=> {
         } else {
             window.scrollTo(0, 0)
         }
+
+        console.log("Loaded page!")
     };
 
     // this function sets which 'a' elements should have the "active" class.
     function setActiveLink(page) {
         // get only 'a' elements inside our nav bar, 'dynamicMenus'
-        links = dynamicMenus.querySelectorAll("a");
+        const links = document.querySelectorAll("nav ul li a") //dynamicMenu.querySelectorAll("a");
+
+        // clear all just in case
+        links.forEach(link => link.classList.remove("active"));
+
         //onsole.log("links:", links);
         // in each link (a element)...
         // set the desired link to be highlighted, while unhighlighting the other links.
@@ -222,7 +244,11 @@ document.addEventListener("DOMContentLoaded", ()=> {
             // If true, add it if it isn't already present.
             // If false, remove it if it exists.
             link.classList.toggle("active", isActive)
+
+            console.log(isActive, link)
         });
+
+        console.log("set active link")
     };
 
     // finally, we load the page.
