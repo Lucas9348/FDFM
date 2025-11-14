@@ -23,12 +23,13 @@ body {
     background-color: var(--background_color);
     display: flex;
     flex-direction: column;
-
-    background-image: url('assets/mini_ecosystem.png'); /* Replace with your image path */
+    /*
+    background-image: url('assets/mini_ecosystem.png');
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
-    background-attachment: fixed; /* Optional: keeps image fixed during scroll */
+    background-attachment: fixed;
+    */
 }
 
 
@@ -215,3 +216,4 @@ footer {
     color: var(--link_color);
     font-weight: 600;
 }
+
