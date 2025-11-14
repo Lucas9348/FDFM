@@ -1,0 +1,17 @@
+{
+  "name": "singleapptest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "html-validate": "^10.3.0",
+    "htmlhint": "^1.7.1"
+  }
+}
