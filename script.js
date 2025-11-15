@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
         about: `
             <h1>About</h1>
             <p class="page_subtitle">What's the big idea?</p>
-            <p class="textAlign">Here's a fun little html project I made in roughly two days. It's basically YouTube, but it only consists of LinesSensei's tutorials playlist! The idea here is to cut out distractions and focus solely on figure drawing from this amazing professional artist ^^. Next time you need to view a tutorial, you won't be flashbanged by a home page that makes you instantly forget what you set out for.</p>
+            <p class="textAlign">Here's a fun little html project I made in roughly four days. It's basically YouTube, but it only consists of LinesSensei's tutorials playlist! The idea here is to cut out distractions and focus solely on figure drawing from this amazing professional artist ^^. Next time you need to view a tutorial, you won't be flashbanged by a home page that makes you instantly forget what you set out for.</p>
             <p class="textAlign">I should be drawing now. You should be, too! :D</p>
             `,
         // The HTML for these pages is generated dynamically in loadPage()
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
             const thumbnail = item.snippet.thumbnails?.medium?.url || ''
             
             playlistHTML += `
-                <li>
+                <li class="playlist_item">
                     <a href="index.html#video_player?v=${id}">
                         <img src="${thumbnail}" alt="${title}"></img>
                         <p>${title}</p>
@@ -153,9 +153,11 @@ document.addEventListener("DOMContentLoaded", ()=> {
         pages.playlist = `
         <h1>Playlist</h1>
         <p class="page_subtitle">LinesSensei's tutorials! :D</p>
-        <ul id="playlistContainer">
-            ${playlistHTML}
-        </ul>
+        <div id="playlist_alignment">
+            <ul id="playlistContainer">
+                ${playlistHTML}
+            </ul>
+        </div>
         `
 
         //onsole.log(pages.playlist)
@@ -269,15 +271,9 @@ document.addEventListener("DOMContentLoaded", ()=> {
         // let's fix that by also checking if previousVideoId is null.
         if (videoIdChanged || previousVideoId === null) {
             // warn the user if no video ID is provided.
-            const warningHTML = !currentVideoId ? `<p style:"padding: 1rem 1rem;">No video ID provided. Select a video through the playlist or add a video ID to the URL with "?v=video_id". Youtu.be ids also work.</p>` : "";
+            const warningHTML = !currentVideoId ? `<p class="warning_text" style:"padding: 1rem 1rem;">No video ID provided. Select a video through the playlist or add a video ID to the URL with "?v=video_id". Youtu.be ids also work.</p>` : "";
             
-            // HTML const for the video input box.
-            const videoInputBoxHTML = `
-                <div id="video_input_box">
-                    <input id="videoURL" type="text" placeholder="Paste YouTube link…" />
-                    <button id="loadVideoBtn">Load Video</button>
-                </div>
-            `;
+            
 
             // update the URL params if we are on the video_player page.
             if (page === "video_player") {
@@ -294,7 +290,6 @@ document.addEventListener("DOMContentLoaded", ()=> {
                 <h1>Video Player</h1>
                 ${warningHTML}
                 <div id="video_player_container"></div>
-                ${videoInputBoxHTML}
             `;
 
             //onsole.log("The video_player page content has been updated and video ID set to:", currentVideoId);
@@ -319,24 +314,32 @@ document.addEventListener("DOMContentLoaded", ()=> {
             window.scrollTo(0, 0)
         }
 
-        
-
+        // set the video src and input box if on the video player page
         if (page === "video_player") {
             if (videoIdChanged) {
                 videoPlayer.src = `https://www.youtube.com/embed/${currentVideoId}`;
             }
-            // setup the video input box event listener
-            setupVideoInputBox();
+            
             // append the input box to the after-video container
-            // but only if it isn't already there
-            if (videoInputBox && !afterVideoContainer.contains(videoInputBox)) {
-                afterVideoContainer.appendChild(videoInputBox);
-            }
+
+            // HTML const for the video input box.
+            const videoInputBoxHTML = `
+                <div id="video_input_box">
+                    <input id="videoURL" type="text" placeholder="Paste YouTube link…" />
+                    <button id="loadVideoBtn">Load Video</button>
+                </div>
+            `;
+
+            
+
+            // use innerHTML to avoid duplicates
+            afterVideoContainer.innerHTML = `${videoInputBoxHTML}`;
+
+            // set up input box AFTER adding it to the DOM
+            setupVideoInputBox();
         } else {
-            // execute removeChild only if videoInputBox exists in the DOM
-            if (videoInputBox && videoInputBox.parentNode) {
-                videoInputBox.parentNode.removeChild(videoInputBox);
-            }
+            // clear the after video container if not on video player page
+            afterVideoContainer.innerHTML = "";
         }
 
         // show or hide the video container and player based on the page and video ID

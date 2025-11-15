@@ -4,8 +4,9 @@
     --panel_color: rgb(29, 39, 70);
     --background_color: black;
     --text_color: white;
-    --link_color: rgb(139, 233, 213);
+    --link_color: #00b4ff; 
     --placeholder_color: rgb(189, 198, 201);
+    --warning_text_color: rgb(255, 100, 100);
 }
 
 * {
@@ -132,13 +133,12 @@ nav a:hover p {
 }
 
 #playlistContainer {
+    padding: 0;
+    margin: 0;
     list-style: none;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    padding: 0;
-    margin-top: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 /* each video item */
@@ -156,9 +156,24 @@ nav a:hover p {
 #playlistContainer img {
     width: 100%;
     display: block;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
 }
 
-#playlistContainer li a p {
+#playlistContainer img:hover {
+    opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .playlist-item img {
+        opacity: 0.6;
+    }
+    .playlist-item:hover img {
+        opacity: 1;
+    }
+}
+
+.playlist_item a p {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -171,7 +186,7 @@ nav a:hover p {
     
 }
 
-#playlistContainer li a:hover {
+.playlist_item a:hover {
     /*text-decoration: underline;*/
     color: rgb(132, 223, 132);
 }
@@ -246,3 +261,8 @@ input::placeholder {
     display: none;
 }
 
+.warning_text {
+    color: var(--warning_text_color);
+    font-weight: 500;
+    margin: 1rem 0;
+}   
