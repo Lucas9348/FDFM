@@ -5,6 +5,7 @@
     --background_color: black;
     --text_color: white;
     --link_color: rgb(139, 233, 213);
+    --placeholder_color: rgb(189, 198, 201);
 }
 
 * {
@@ -14,6 +15,7 @@
     font-family: "Poppins";
 }
 
+/* full height for body to allow flex layout */
 html, body {
     height: 100%;
 }
@@ -32,19 +34,20 @@ body {
     */
 }
 
-
+/*
 body::before {
     content: "";
-    position: fixed; /* stay still even when scrolling */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100vh;
 
-    background: rgba(0, 0, 0, 0.7); /* opacity control, 0.5 = 50% dim */
-    pointer-events: none; /* clicks pass through */
-    z-index: -1; /* sits behind everything */
+    background: rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+    z-index: -1;
 }
+*/
 
 nav {
     background: var(--panel_color);
@@ -184,7 +187,7 @@ nav a:hover p {
     background: rgb(0, 0, 0);
 }
 
-.video-wrapper {
+.video_wrapper {
     max-width: 100%;
     max-height: calc(100vh - 310px); /* subtract header + footer, or whatever yours are */
     min-height: 200px;
@@ -193,7 +196,7 @@ nav a:hover p {
     display: flex;
 }
 
-.video-wrapper iframe {
+.video_wrapper iframe {
     width: 100%;
     height: 100%;
     border: none;
@@ -215,4 +218,22 @@ footer {
 .page_subtitle {
     color: var(--link_color);
     font-weight: 600;
+}
+
+/* add style to buttons and inputs */
+button, input[type="text"], input[type="submit"] {
+    background-color: var(--panel_color);
+    color: var(--text_color);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    /* this adds a smooth transition effect on hover */
+    transition: background-color 0.3s;
+    margin: 10px 5px;
+}
+
+/* the text hint inside input is still gray, so we change that */
+input::placeholder {
+    color: var(--placeholder_color);
 }
