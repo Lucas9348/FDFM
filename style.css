@@ -25,6 +25,7 @@ body {
     background-color: var(--background_color);
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
     /*
     background-image: url('assets/mini_ecosystem.png');
     background-repeat: no-repeat;
@@ -116,11 +117,14 @@ nav a:hover p {
     }
 }
 
-#content {
+
+#page_content {
     padding: 100px 20px 80px;
     text-align: center;
     flex: 1;
 }
+
+
 
 .textAlign {
     text-align: justify;
@@ -187,7 +191,7 @@ nav a:hover p {
     background: rgb(0, 0, 0);
 }
 
-.video_wrapper {
+#video_container {
     max-width: 100%;
     max-height: calc(100vh - 310px); /* subtract header + footer, or whatever yours are */
     min-height: 200px;
@@ -196,7 +200,7 @@ nav a:hover p {
     display: flex;
 }
 
-.video_wrapper iframe {
+#video_container iframe {
     width: 100%;
     height: 100%;
     border: none;
@@ -237,3 +241,8 @@ button, input[type="text"], input[type="submit"] {
 input::placeholder {
     color: var(--placeholder_color);
 }
+
+#video_container.hidden {
+    display: none;
+}
+

@@ -7,8 +7,11 @@ document.addEventListener("DOMContentLoaded", ()=> {
     history.scrollRestoration = "manual";
 
     // get references to our main content div and dynamic menu ul
-    const contentDiv = document.getElementById("content");
-    const navMenu = document.getElementById("navMenu");
+    const dynamicContent = document.getElementById("dynamic_content");
+    const navMenu = document.getElementById("nav_menu");
+    const videoContainer = document.getElementById("video_container");
+    const videoPlayer = document.getElementById("video_player");
+    const afterVideoContainer = document.getElementById("dynamic_content_after_video");
 
     const scrollPositions = {};
 
@@ -18,8 +21,13 @@ document.addEventListener("DOMContentLoaded", ()=> {
     let previousPage = currentPage();
 
     let playlistLoaded = false;
-    let videoPlayerLoaded = false;
     let videoIdChanged = false;
+
+    // set before manually changing the hash to prevent double-handling
+    let ignoreHashChange = false;
+
+    // first page load bool:
+    let firstPageLoad = true;
 
     // Store the html content for each page in an object.
     const pages = {
@@ -179,19 +187,25 @@ document.addEventListener("DOMContentLoaded", ()=> {
 
     // detects when we successfully go to a href with a hash
     window.addEventListener("hashchange", () => {
-        console.log("*** Hash change detected");
+        if (!ignoreHashChange) {
+            console.log("*** Hash change detected");
 
-        scrollPositions[previousPage] = window.scrollY;
-        previousPage = currentPage();
-        
-        //onsole.log("scroll position: ", window.scrollY);
-        //onsole.log("scrollPositions object array: ", scrollPositions)
-        
+            scrollPositions[previousPage] = window.scrollY;
+            previousPage = currentPage();
+            
+            //onsole.log("scroll position: ", window.scrollY);
+            //onsole.log("scrollPositions object array: ", scrollPositions)
+            
 
-        //onsole.log("hash changed to:", window.location.hash);
-        // call loadPage. This is our app function.
-        // insert window.location.hash. This the destination of the href hash, ex. "#about" from "index.html#about"
-        loadPage(window.location.hash);
+            //onsole.log("hash changed to:", window.location.hash);
+            // call loadPage. This is our app function.
+            // insert window.location.hash. This the destination of the href hash, ex. "#about" from "index.html#about"
+            loadPage(window.location.hash);
+        } else {
+            // set ignoreHashChange back to false for next time
+            ignoreHashChange = false;
+            console.log("*** Ignored hash change due to manual update.");
+        }
     });
 
     // function to dynamically load our page.
@@ -205,23 +219,14 @@ document.addEventListener("DOMContentLoaded", ()=> {
         // get parameters if they exist.
         const [page, params] = hash.replace("#","").split("?") || "home";
 
-        // /!\ Fallback videos are currently not being used.
-        const fallbackVideos = {
-            "Oo63vtmSW_E": "That tracks. Baseball, huh?",
-            "IgENnFhniOg": "Trumpet...",
-            "eFq4qsKrcoE": "Pencil...",
-        };
-
-        //page === "playlist" && 
-
         // If we haven't loaded the playlist yet, do so here.
         if (!playlistLoaded) {
             await generatePlaylist();
             playlistLoaded = true;
         }
 
-        // log if we are on the video player page.
-        //onsole.log("On video player page:", page === "video_player");
+        // get the current video ID:
+        // *********************************************************************************
 
         // prioritize getting the parameter video ID if it exists.
         if (page === "video_player" && params) {
@@ -254,7 +259,8 @@ document.addEventListener("DOMContentLoaded", ()=> {
         // set previousVideoId to currentVideoId for next time.
         previousVideoId = currentVideoId;
 
-        
+        // end of getting current video ID
+        // *********************************************************************************
 
         // the following code updates the video player page HTML
 
@@ -265,16 +271,9 @@ document.addEventListener("DOMContentLoaded", ()=> {
             // warn the user if no video ID is provided.
             const warningHTML = !currentVideoId ? `<p style:"padding: 1rem 1rem;">No video ID provided. Select a video through the playlist or add a video ID to the URL with "?v=video_id". Youtu.be ids also work.</p>` : "";
             
-            // create HTML for the iframe that only displays if a video ID is present.
-            const videoPlayerHTML = currentVideoId ? `
-                <div class="video_wrapper">
-                    <iframe id="video_player" src="https://www.youtube.com/embed/${currentVideoId}" allowfullscreen></iframe>
-                </div>
-            ` : "";
-            
             // HTML const for the video input box.
             const videoInputBoxHTML = `
-                <div id="videoInputBox">
+                <div id="video_input_box">
                     <input id="videoURL" type="text" placeholder="Paste YouTube link…" />
                     <button id="loadVideoBtn">Load Video</button>
                 </div>
@@ -294,7 +293,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
             pages.video_player = `
                 <h1>Video Player</h1>
                 ${warningHTML}
-                ${videoPlayerHTML}
+                <div id="video_player_container"></div>
                 ${videoInputBoxHTML}
             `;
 
@@ -303,15 +302,14 @@ document.addEventListener("DOMContentLoaded", ()=> {
 
         //onsole.log("Loading page:", page);
 
-        // set the content this page if it exists, or the home page.
-        contentDiv.innerHTML = pages[page] || pages.home;
+        // update the dynamic content div with the selected page's HTML
+        // ********************************************************************************
+        dynamicContent.innerHTML = pages[page] || pages.home;
 
-        // if we are on the video player page, setup the input box.
-        if (page === "video_player") {
-            setupVideoInputBox();
-        }
+        // handle any dynamic elements that need to be set up after loading the page
+        const videoInputBox = document.getElementById("video_input_box");
 
-        // call setActiveLink (???)
+        // set the active link in the nav menu (visual functionality only)
         setActiveLink(page);
 
         // restore scroll position
@@ -321,50 +319,67 @@ document.addEventListener("DOMContentLoaded", ()=> {
             window.scrollTo(0, 0)
         }
 
-        //const iframe = document.getElementById("video_player");
-        //iframe.src = `https://www.youtube.com/embed/${currentVideoId}`;
-        //if (page === "video_player" && currentVideoId) {
-        //    document.getElementById("video_wrapper").classList.add("hidden");
-        //} else {
-        //    document.getElementById("video_wrapper").classList.remove("hidden");
-        //}
+        
+
+        if (page === "video_player") {
+            if (videoIdChanged) {
+                videoPlayer.src = `https://www.youtube.com/embed/${currentVideoId}`;
+            }
+            // setup the video input box event listener
+            setupVideoInputBox();
+            // append the input box to the after-video container
+            // but only if it isn't already there
+            if (videoInputBox && !afterVideoContainer.contains(videoInputBox)) {
+                afterVideoContainer.appendChild(videoInputBox);
+            }
+        } else {
+            // execute removeChild only if videoInputBox exists in the DOM
+            if (videoInputBox && videoInputBox.parentNode) {
+                videoInputBox.parentNode.removeChild(videoInputBox);
+            }
+        }
+
+        // show or hide the video container and player based on the page and video ID
+        videoContainer.classList.toggle("hidden", !(page === "video_player" && currentVideoId));
+        videoPlayer.classList.toggle("hidden", !(page === "video_player" && currentVideoId));
+
+        // add the search param to the url if currentVideoId is valid
+        if (page === "video_player" && currentVideoId && !firstPageLoad) {
+            // prevent double-handling if we are already ignoring hash changes
+            //ignoreHashChange = true;
+
+            const newHash = `#video_player?v=${currentVideoId}`;
+            if (location.hash !== newHash) {
+                history.replaceState(null, "", newHash); // does not trigger hashchange event
+            }
 
 
+            //location.hash = `video_player?v=${currentVideoId}`;
+        }
+
+
+        // yay we're done!
         console.log("Loaded page!")
+        console.log("ignoreHashChange is now:", ignoreHashChange);
+
+        firstPageLoad = false;
     };
+    // End of loadPage function
+
 
     // this function sets which 'a' elements should have the "active" class.
     function setActiveLink(page) {
-        // get only 'a' elements inside our nav bar, 'navMenus'
-        const links = document.querySelectorAll("nav ul li a") //navMenu.querySelectorAll("a");
+        // get all nav menu links
+        const links = document.querySelectorAll("nav ul li a");
+        // iterate through each link
 
-        // clear all just in case
+        // remove all active classes first
         links.forEach(link => link.classList.remove("active"));
 
-        //onsole.log("links:", links);
-        // in each link (a element)...
-        // set the desired link to be highlighted, while unhighlighting the other links.
         links.forEach(link => {
-            // set the classname to "active" if the href contains the page text.
-            // essentially, we are taking something like "about" and ensuring <a href="#about"></a> has the active classname.
+            // if the link's href includes the current page, set it to active
             link.classList.toggle("active", link.getAttribute("href").includes(page));
-
-            // chatGPT recommends using triple equals, like such...
-            // check if this link's href matches "#key", ex. "#contacts"
-            // "===" breaks implied type rules, such as 1 == true or "1" == 1
-            // "===" also checks if objects are the same in memory! :O
-            // So, two identical arrays still won't be the same unless they are variables that reference the same object in memory.
-            const isActive = link.getAttribute("href") === `#${page}`
-            // Okay, so I'm guessing this toggle method just sets a class to be on or off.
-            // Not quite. It's just an easier method that turns it into a boolean based method.
-            // If true, add it if it isn't already present.
-            // If false, remove it if it exists.
-            link.classList.toggle("active", isActive)
-
-            //onsole.log(isActive, link)
         });
-
-        //onsole.log("set active link")
     };
 
     // finally, we load the page.
