@@ -164,15 +164,6 @@ nav a:hover p {
     opacity: 1;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .playlist-item img {
-        opacity: 0.6;
-    }
-    .playlist-item:hover img {
-        opacity: 1;
-    }
-}
-
 .playlist_item a p {
     white-space: nowrap;
     overflow: hidden;
@@ -199,8 +190,6 @@ nav a:hover p {
     box-sizing: border-box;
     
 }
-
-
 
 #video_player {
     background: rgb(0, 0, 0);
@@ -265,4 +254,4 @@ input::placeholder {
     color: var(--warning_text_color);
     font-weight: 500;
     margin: 1rem 0;
-}   
+}
