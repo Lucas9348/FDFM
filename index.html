@@ -2,12 +2,45 @@
 <html lang="en">
 
 <head>
+    <script>
+        // Defining onyoutubeiframeapiready BEFORE EVERYTHING ELSE
+        // MWAH HAH HAH HAH HAH!!
+
+        // define globals
+        window.ytApiReady = false;
+
+        // this only "flips a flag"
+        window.onYouTubeIframeAPIReady = ()=> {
+            window.ytApiReady = true;
+            console.log("API READY")
+
+            // Safe check: only call tryCreatePlayer if it exists
+            //if (typeof window.tryCreatePlayer === "function") {
+            //    window.tryCreatePlayer();
+            //} else {
+                // retry with a delay
+            //    console.log("tryCreatePlayer() not found! Retrying with a delay:::");
+            //    window.__ytRetryTimer = setInterval(() => {
+            //        if (typeof window.tryCreatePlayer === "function") {
+            //            clearInterval(window.__ytRetryTimer);
+            //            window.tryCreatePlayer();
+            //        }
+            //    }, 10);
+            //}
+
+            //console.log("[index] YouTube Iframe API READY")
+            //tryCreatePlayer();
+        }
+    </script>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- SPA logic -->
+    <script src="script.js"></script>
     <title>Figure Drawing Focus Mode</title>
     <link rel="icon" href="images/favicon.png" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <script defer src="script.js"></script>
 </head>
 
 <body>
@@ -16,8 +49,8 @@
     </nav>
     <div id="page_content">
         <div id="dynamic_content"></div>
-        <div id="video_container" class="hidden">
-            <iframe title="video" id="video_player" allowfullscreen></iframe>
+        <div id="video_container">
+            <div id="video_player"></div>
         </div>
         <div id="dynamic_content_after_video"></div>
     </div>

@@ -1,7 +1,217 @@
-//11/14/2025
 
 
-document.addEventListener("DOMContentLoaded", ()=> {
+//11/17/2025 version
+
+// Wrapped In Black: "http://youtube.com/watch?v=S2I7M0mletI"
+// Inside the playlist: https://www.youtube.com/watch?v=S2I7M0mletI&list=PLmsMovhSH3VcIAhxoB8Rtu3su1AtiMcp9&index=42
+// * Playlist ID: "list=PLmsMovhSH3VcIAhxoB8Rtu3su1AtiMcp9"
+// * Index note: "index=42"
+// * Video: "v=S2I7M0mletI"
+
+
+
+
+// YouTube API ready flag
+//let ytApiReady = false; // set by onYouTubeIframeAPIReady
+let ytPlayerReady = false;
+let ytPlayer = null;
+// used for playlists
+let pendingVideoId = null;
+// used for current video id
+let currentVideoId = null;
+// not sure why this exists
+let previousVideoId = null;
+
+// set only by syncVideoState
+let lastLoadedVideoId = null;
+
+// this will define our playlist later
+let currentPlaylistId = null;
+
+function logEvent(tag, ...args) {
+    console.log(new Date().toISOString(), tag, ...args);
+}
+
+//window.onYouTubeIframeAPIReady = function () {
+//    ytApiReady = true;
+//    console.log("**** ONYOUTUBEIFRAMEAPIREADY() -> TRYCREATEPLAYER()");
+//    tryCreatePlayer();
+//}
+// ^ Function called by the YouTube Iframe API when it's ready
+// ^^ This function must be placed outside of the event listener (existing on 'window')
+
+function tryCreatePlayer() {
+    console.log("**** TRYCREATEPLAYER()")
+    // if, for whatever reason, the API is not ready.
+    if (!window.ytApiReady) {
+        console.log("[TCP()] YouTube API is NOT ready!");
+        return;
+    }
+
+    // if the ytPlayer already exists, stop here.
+    if (ytPlayer) {
+        console.log("[TCP()] ytPlayer ALREADY EXISTS");
+        return;
+    }
+
+    //const element = document.getElementById('video_player_yt');
+    //if (element) {
+    //    console.log("[TCP()] Page wasn't ready, trying again in 50 ms.");
+    //    // Page not ready yet; retry later
+    //    setTimeout(tryCreatePlayer, 50);
+    //    return;
+    //}
+
+    // create the player; player will inject iframe inside #youtube_player
+    console.log("[TCP()] Creating YT.Player:::");
+    ytPlayer = new YT.Player('video_player', {
+        height: '360',
+        width: '640',
+        playerVars: {
+            // customize: autoplay=0 by default
+            autoplay: 0,
+            controls: 1,
+            rel: 0,
+            modestbranding: 1
+        },
+        events: {
+            onReady: onPlayerReady,
+            //onStateChange: onPlayerStateChange
+        }
+    });
+    console.log("[TCP()] ytPlayer CREATED!");
+
+    // if a video was requested earler, load it now
+    //if (pendingVideoId) {
+    //    loadVideo(pendingVideoId);
+    //    pendingVideoId = null;
+    //}
+}
+
+/* Player event handlers */
+function onPlayerReady(event) {
+    console.log("**** ONPLAYERREADY: YT player is ready!");
+    // optionally start playing automatically
+    // event.target.playVideo();
+    //pendingVideoId = "S2I7M0mletI"
+    if (pendingVideoId) {
+        console.log("[OPR()] pendingVideoId FOUND!", pendingVideoId);
+        console.log("!!!! Video LOADED in onPlayerReady()")
+        ytPlayer.loadVideoById(pendingVideoId);
+        lastLoadedVideoId = pendingVideoId;
+        pendingVideoId = null;
+    } else {
+        console.log("[OPR()] No pendingVideoId!")
+    }
+}
+
+
+// play a video if:
+// * currentVideoId is valid
+// * ytPlayer exists
+// * the videoId has changed
+function syncVideoState() {
+    console.log("**** SYNCVIDEOSTATE")
+    console.log("ytPlayer", ytPlayer)
+    if (!currentVideoId) {
+        console.log("[SVS()] No currentVideoId");
+        return;
+    }
+    console.log("[SVS()] CurrentVideoId exists:::")
+
+    // player not ready yet
+    if (!ytPlayer || typeof ytPlayer.loadVideoById !== "function") {
+        console.log("[SVS()] Player NOT found,");
+        console.log("pendingVideoId =", currentVideoId);
+        pendingVideoId = currentVideoId;
+        return;
+    }
+
+    // if it's the same video, don't reload
+    if (currentVideoId === lastLoadedVideoId) {
+        console.log("[SVS()] same video; don't reload");
+        return;
+    }
+
+    // check if ytPlayer.loadVideoById exists
+    if (ytPlayer && typeof ytPlayer.loadVideoById !== 'function') {
+        console.log("[SVS()] Player FOUND, yet ytPlayer.loadVideoById NOT found!");
+        return;
+    }
+
+    // new video, load new id
+    console.log("[SVS()] ytPlayer.loadVideoById FOUND!");
+    console.log("!!!! Video LOADED in SVS!", currentVideoId);
+    ytPlayer.loadVideoById(currentVideoId);
+    lastLoadedVideoId = currentVideoId;
+}
+
+function onPlayerStateChange(event) {
+    // YT.PlayerState.ENDED === 0
+    // The above must be part of an enum.
+    if (event.data === YT.PlayerState.ENDED) {
+        console.log('video ended');
+        // call the SPA function to play the next video
+        playNextVideo();
+    }
+}
+
+/* Ultility: load a video by id (safe even if player not yet created) */
+function loadVideo(videoId) {
+    console.log("**** LOADVIDEO():", videoId);
+    if (!videoId) {
+        console.log("[LV()] No video id found. Returning.")
+        return;
+    }
+
+    // DEBUG: does the loaded video match?
+    if (videoId !== getVideoIdFromURL()) {
+        console.log("videoId from URL:", getVideoIdFromURL());
+        console.log("Current loaded video id DOES NOT match URL search param");
+    } else {
+        console.log("Current loaded video id MATCHES URL search param")
+    }
+    
+    // if player is available, use it; overwise, save as pending.
+    if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+        // Force a clean load so previous thumbnail doesn't linger:
+        // unload then request on next frame (optional but recommended)
+        ytPlayer.stopVideo && ytPlayer.stopVideo(); // stop current
+        // You can call loadVideoById directly:
+        ytPlayer.loadVideoById({ videoId: videoId, suggestedQuality: 'default' });
+        console.log("!!!! Video loaded successfully!:", videoId);
+    } else {
+        console.log("[LV()] Player NOT found; pending:", videoId)
+        pendingVideoId = videoId;
+        // in case API already ready but player not created.
+        if (!ytPlayer) {
+            tryCreatePlayer();
+        } else if (typeof ytPlayer.loadVideoById !== 'function') {
+            console.log("[LV()] ytPlayer exists while ytPlayer.loadVideoById does not.")
+        }
+    }
+}
+
+function getVideoIdFromURL() {
+    const [page, params] = window.location.hash.replace("#","").split("?") || "home";
+    if (page === "video_player" && params) {
+        const searchParams = new URLSearchParams(params);
+        return searchParams.get("v");
+    }
+    return null;
+}
+
+
+
+/* Example stub for autoplay next behavior - implement with your playlist logic */
+function playNextVideo() {
+    // You must implement: find index of currentVideoId inside playlist,
+    // then call loadVideo(nextId) and update SPA state / URL
+    console.log('playNextVideo() called - implement playlist logic here')
+}
+
+document.addEventListener("DOMContentLoaded", ()=> { //domcl
+    console.log("**** DOMCONTENTLOADED")
     // disable automatic scroll restoration
     // this prevents the browser from messing with our custom scroll positions.
     history.scrollRestoration = "manual";
@@ -15,19 +225,14 @@ document.addEventListener("DOMContentLoaded", ()=> {
 
     const scrollPositions = {};
 
-    let previousVideoId = null;
-    let currentVideoId = null;
-
     let previousPage = currentPage();
 
     let playlistLoaded = false;
     let videoIdChanged = false;
 
+
     // set before manually changing the hash to prevent double-handling
     let ignoreHashChange = false;
-
-    // first page load bool:
-    let firstPageLoad = true;
 
     // Store the html content for each page in an object.
     const pages = {
@@ -81,9 +286,18 @@ document.addEventListener("DOMContentLoaded", ()=> {
 
 
     // function to extract YouTube video ID from various URL formats
-    function extractYouTubeID(url) {
+    function extractYouTubeID(input) {
+        // define the correct character set
+        const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
+
+        // Check if the input is an ID:
+        if (YT_ID_REGEX.test(input)) {
+            return input;
+        }
+
         try {
-            const parsed = new URL(url);
+            // check if the input is a URL
+            const parsed = new URL(input);
 
             // Standard: youtube.com/watch?v=xxxx
             if (parsed.searchParams.get("v")) {
@@ -99,6 +313,9 @@ document.addEventListener("DOMContentLoaded", ()=> {
             if (parsed.pathname.startsWith("/shorts/")) {
                 return parsed.pathname.split("/")[2];
             }
+
+            
+
 
             return null;
         } catch (e) {
@@ -161,7 +378,7 @@ document.addEventListener("DOMContentLoaded", ()=> {
         `
 
         //onsole.log(pages.playlist)
-        console.log("Generated playlist")
+        //onsole.log("Generated playlist")
     };
 
     // simple function to create nav links dynamically from the "pages" object
@@ -189,8 +406,9 @@ document.addEventListener("DOMContentLoaded", ()=> {
 
     // detects when we successfully go to a href with a hash
     window.addEventListener("hashchange", () => {
+        console.log("HASHCHANGE")
         if (!ignoreHashChange) {
-            console.log("*** Hash change detected");
+            console.log("* Hash change function will not be ignored");
 
             scrollPositions[previousPage] = window.scrollY;
             previousPage = currentPage();
@@ -206,13 +424,16 @@ document.addEventListener("DOMContentLoaded", ()=> {
         } else {
             // set ignoreHashChange back to false for next time
             ignoreHashChange = false;
-            console.log("*** Ignored hash change due to manual update.");
+            console.log("* Ignored hash change due to manual update.");
         }
     });
+
+    
 
     // function to dynamically load our page.
     // this function sets our content and then sets the active link to the const page from the inserted hash
     async function loadPage(hash){
+        console.log("**** LOADPAGE()");
         //onsole.log("currentVideoId before loading page:", currentVideoId);
         //onsole.log("previousVideoId before loading page:", previousVideoId);
         //onsole.log("Loading page for hash:", hash);
@@ -230,76 +451,126 @@ document.addEventListener("DOMContentLoaded", ()=> {
         // get the current video ID:
         // *********************************************************************************
 
-        // prioritize getting the parameter video ID if it exists.
-        if (page === "video_player" && params) {
-            const searchParams = new URLSearchParams(params);
-            currentVideoId = searchParams.get("v");
-            console.log("Param video ID found:", currentVideoId);
+        // Video get priority:
+        // * url search param
+        // * currentVideoId
+        // * previousVideoId
+        // * pendingVideoId from playlist
+        if (page === "video_player") {
+            const urlVideoId = getVideoIdFromURL();
+            if (urlVideoId) {
+                // set it to current
+                currentVideoId = urlVideoId;
+            } else if (currentVideoId) {
+                // no need to do anything here
+            } else if (previousVideoId) {
+                // set it to current
+                currentVideoId = previousVideoId;
+            } else if (pendingVideoId) {
+                // set it to current
+                currentVideoId = pendingVideoId;
+            }
+
+            // set previousVideoId to currentVideoId for next time.
+            previousVideoId = currentVideoId;
         }
+
+        // after setting currentVideoId, set pending
+        
 
         // if we still don't have a current video ID, check previousVideoId
         // attempt to fetch a video ID if we don't have one already.
-        if (!currentVideoId && previousVideoId) {
-            currentVideoId = previousVideoId;
-            console.log("No param video ID; using previousVideoId:", previousVideoId);
+        //if (!currentVideoId && previousVideoId) {
+        //    currentVideoId = previousVideoId;
+        //    console.log("No param video ID; using previousVideoId:", previousVideoId);
             // update the URL hash to reflect this change.
             //location.hash = `video_player?v=${currentVideoId}`;
-        }
+        //}
         
         // log if no current video ID is found.
-        if (!currentVideoId && page === "video_player") {
-            console.log("No current video ID.");
-        }
+        //if (!currentVideoId && page === "video_player") {
+        //    console.log("No current video ID.");
+        //}
 
         // detect if the video ID changed:
-        videoIdChanged = (currentVideoId !== previousVideoId);
+        //videoIdChanged = (currentVideoId !== previousVideoId);
         // log if it changed
-        if (videoIdChanged) {
-            console.log("Video ID has changed:", videoIdChanged);
-        }
+        //if (videoIdChanged) {
+        //    console.log("Video ID has changed:", videoIdChanged);
+        //}
 
-        // set previousVideoId to currentVideoId for next time.
-        previousVideoId = currentVideoId;
+        
 
         // end of getting current video ID
         // *********************************************************************************
 
-        // the following code updates the video player page HTML
+        
+
+
+
+
+
+        // *********************************************************************************
 
         // if it changed, we can update the page accordingly.
         // however, this won't run when the page is first loaded.
         // let's fix that by also checking if previousVideoId is null.
-        if (videoIdChanged || previousVideoId === null) {
-            // warn the user if no video ID is provided.
-            const warningHTML = !currentVideoId ? `<p class="warning_text" style:"padding: 1rem 1rem;">No video ID provided. Select a video through the playlist or add a video ID to the URL with "?v=video_id". Youtu.be ids also work.</p>` : "";
-            
-            
-
-            // update the URL params if we are on the video_player page.
-            if (page === "video_player") {
-                // if no video ID is provided, remove the search param entirely.
-                if (!currentVideoId) {
-                    location.hash = `video_player`;
-                } else {
-                    location.hash = `video_player?v=${currentVideoId}`;
-                }
-            }
-
-            // Finally, set the video player page content with the new video ID.
-            pages.video_player = `
+        const warningHTML = !currentVideoId ? `<p class="warning_text" style:"padding: 1rem 1rem;">No video ID provided. Select a video through the playlist or add a video ID to the URL with "?v=video_id". Youtu.be ids also work.</p>` : "";
+        pages.video_player = `
                 <h1>Video Player</h1>
                 ${warningHTML}
                 <div id="video_player_container"></div>
-            `;
+        `;
 
-            //onsole.log("The video_player page content has been updated and video ID set to:", currentVideoId);
-        }
-
-        //onsole.log("Loading page:", page);
+        
 
         // update the dynamic content div with the selected page's HTML
         // ********************************************************************************
         dynamicContent.innerHTML = pages[page] || pages.home;
+        //logEvent('[LP()] Set dynamic content!', { page, params, currentVideoId, pendingVideoId, ytApiReady: !!ytApiReady, ytPlayer: !!ytPlayer})
+
+        tryCreatePlayer()
+
+
+        // New code by cGPT
+        // this code does the following:
+        // * toggle visibility of 'video_container'
+        // * call syncVideoState
+        // * update the URL (without triggering hashchange)
+        // * update the afterVideoContainer 
+        console.log("[LP()] currentVideoId:", currentVideoId);
+        console.log("[LP()] previousVideoId:", previousVideoId);
+        console.log("[LP()] urlVideoId", getVideoIdFromURL());
+        console.log("[LP()] pendingVideoId", pendingVideoId);
+        if (page === 'video_player') { //@lpv
+            // make sure the video container is visible
+            document.getElementById('video_container').style.display = 'block';
+            
+
+            // update URL without causing hashchange loop:
+            const newHash = currentVideoId ? `#video_player?v=${currentVideoId}` : '#video_player';
+            if (location.hash !== newHash) {
+                history.replaceState(null, '', newHash); // does NOT trigger hashchange event listener
+            }
+
+            // update after-video HTML
+            const afterVideoHTML = `
+                <div id="video_input_box">
+                    <input id="videoURL" type="text" placeholder="Paste YouTube link…" />
+                    <button id="loadVideoBtn">Load Video</button>
+                </div>
+            `;
+            afterVideoContainer.innerHTML = `${afterVideoHTML}`;
+            // set up input box AFTER adding it to the DOM
+            setupVideoInputBox();
+
+            
+        } else {
+            // hide the player container if not on video page
+            document.getElementById('video_container').style.display = 'none';
+            // clear the after video container if not on video player page
+            afterVideoContainer.innerHTML = "";
+        }
 
         // handle any dynamic elements that need to be set up after loading the page
         const videoInputBox = document.getElementById("video_input_box");
@@ -314,56 +585,20 @@ document.addEventListener("DOMContentLoaded", ()=> {
             window.scrollTo(0, 0)
         }
 
-        // set the video src and input box if on the video player page
-        if (page === "video_player") {
-            if (videoIdChanged) {
-                videoPlayer.src = `https://www.youtube.com/embed/${currentVideoId}`;
+        // call syncVideoState AFTER setActiveLink
+        if (page === 'video_player') {
+            // instruct the player to load this id (safe even if API/player not ready)
+            //loadVideo(currentVideoId);
+            if (!currentVideoId) {
+                console.log("[LP()] currentVideoId NOT found!")
+                console.log("* syncVideoState couldn't be called!")
+            } else {
+                syncVideoState();
             }
-            
-            // append the input box to the after-video container
-
-            // HTML const for the video input box.
-            const videoInputBoxHTML = `
-                <div id="video_input_box">
-                    <input id="videoURL" type="text" placeholder="Paste YouTube link…" />
-                    <button id="loadVideoBtn">Load Video</button>
-                </div>
-            `;
-
-            
-
-            // use innerHTML to avoid duplicates
-            afterVideoContainer.innerHTML = `${videoInputBoxHTML}`;
-
-            // set up input box AFTER adding it to the DOM
-            setupVideoInputBox();
-        } else {
-            // clear the after video container if not on video player page
-            afterVideoContainer.innerHTML = "";
         }
-
-        // show or hide the video container and player based on the page and video ID
-        videoContainer.classList.toggle("hidden", !(page === "video_player" && currentVideoId));
-        videoPlayer.classList.toggle("hidden", !(page === "video_player" && currentVideoId));
-
-        // add the search param to the url if currentVideoId is valid
-        if (page === "video_player" && currentVideoId && !firstPageLoad) {
-            // prevent double-handling if we are already ignoring hash changes
-            //ignoreHashChange = true;
-
-            const newHash = `#video_player?v=${currentVideoId}`;
-            if (location.hash !== newHash) {
-                history.replaceState(null, "", newHash); // does not trigger hashchange event
-            }
-
-
-            //location.hash = `video_player?v=${currentVideoId}`;
-        }
-
 
         // yay we're done!
-        console.log("Loaded page!")
-        console.log("ignoreHashChange is now:", ignoreHashChange);
+        console.log("[LP()] Loaded page!")
 
         firstPageLoad = false;
     };
